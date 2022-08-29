@@ -1,0 +1,13 @@
+Description=ODROID-H3 I2C Test
+After=syslog.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/h3-i2ctest
+ExecStart=/usr/bin/screen -L -DmS h3-i2ctest ./h3-i2ctest.sh
+ExecStartPre=/bin/sleep 10
+
+[Install]
+WantedBy=multi-user.target
+#WantedBy=default.target
