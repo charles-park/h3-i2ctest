@@ -182,6 +182,84 @@ void _parse_i2c_config (app_data_t *app_data)
 }
 
 //------------------------------------------------------------------------------
+#define	OVERLAY_CFG_FILE	"/root/OverlayConfig/overlay_app.cfg"
+
+bool parse_overlay_cfg_file (app_data_t *app_data)
+{
+	FILE *pfd;
+	char buf[256], *ptr, is_cfg_file = 0;
+	if (access (OVERLAY_CFG_FILE, F_OK) < 0) {
+		memset (app_data->eth_name, 0, sizeof(app_data->eth_name));
+		memset (app_data->mac_test, 0, sizeof(app_data->mac_test));
+		sprintf(app_data->eth_name[0], "%s", "enp1s0");
+		sprintf(app_data->eth_name[1], "%s", "enp2s0");
+		sprintf(app_data->mac_test, "%s", "disable");
+		return true;
+	}
+
+	if ((pfd = fopen(OVERLAY_CFG_FILE, "r")) == NULL) {
+		err ("%s : %s file open fail!\n", __func__, OVERLAY_CFG_FILE);
+		return false;
+	}
+
+	/* config file에서 1 라인 읽어올 buffer 초기화 */
+	memset (buf, 0, sizeof(buf));
+	while(fgets(buf, sizeof(buf), pfd) != NULL) {
+		/* config file signature 확인 */
+		if (!is_cfg_file) {
+			is_cfg_file = strncmp ("ODROID-APP-CONFIG", buf, strlen(buf)-1) == 0 ? 1 : 0;
+			memset (buf, 0x00, sizeof(buf));
+			continue;
+		}
+
+		ptr = strtok (buf, ",");
+		if (!strncmp(ptr, "I2C", strlen("I2C"))) {
+			char	i2c_addr_str[16], cnt;
+
+			for (cnt = 0; cnt < 2; cnt++) {
+				memset (i2c_addr_str, 0, sizeof(i2c_addr_str));
+				_strtok_strcpy(i2c_addr_str);
+				tolowerstr(i2c_addr_str);
+
+				if (i2c_addr_str[0] == '0' && i2c_addr_str[1] == 'x')
+					app_data->i2c_test_addr[cnt] = (__u8)(strtoul(i2c_addr_str, NULL, 16));
+				else
+					app_data->i2c_test_addr[cnt] = (__u8)(strtoul(i2c_addr_str, NULL, 10));
+			}
+		}
+		if (!strncmp(ptr, "MAC", strlen("MAC"))) {
+			memset (app_data->mac_test, 0, sizeof(app_data->mac_test));
+			_strtok_strcpy(app_data->mac_test);
+
+			memset (app_data->eth_name, 0, sizeof(app_data->eth_name));
+			_strtok_strcpy(app_data->eth_name[0]);
+			_strtok_strcpy(app_data->eth_name[1]);
+
+			/* check ethernet mac address range */
+			memset (app_data->mac_range, 0, sizeof(app_data->mac_range));
+			_strtok_strcpy(app_data->mac_range[0]);	/* mac start addr */
+			tolowerstr(app_data->mac_range[0]);
+			_strtok_strcpy(app_data->mac_range[1]);	/* mac end addr */
+			tolowerstr(app_data->mac_range[1]);
+		}
+		memset (buf, 0x00, sizeof(buf));
+	}
+
+	info ("=== %s === \n", __func__);
+	info ("Check I2C Device Addr = [0x%02x, 0x%02x]\n",
+				app_data->i2c_test_addr[0], app_data->i2c_test_addr[1]);
+	info ("Check Ethernet name = [%s, %s]\n",
+				app_data->eth_name[0], app_data->eth_name[1]);
+	info ("Check MAC Address Range = [Start : %s - End : %s], Test = %s\n",
+				app_data->mac_range[0], app_data->mac_range[1], app_data->mac_test);
+
+	if (pfd)
+		fclose (pfd);
+
+	return true;
+}
+
+//------------------------------------------------------------------------------
 bool parse_cfg_file (char *cfg_filename, app_data_t *app_data)
 {
 	FILE *pfd;
@@ -216,7 +294,8 @@ bool parse_cfg_file (char *cfg_filename, app_data_t *app_data)
 		err("This file is not APP Config File! (filename = %s)\n", cfg_filename);
 		return false;
 	}
-	return true;
+
+	return parse_overlay_cfg_file (app_data);
 }
 
 //------------------------------------------------------------------------------

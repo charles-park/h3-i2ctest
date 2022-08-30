@@ -23,7 +23,8 @@
 // #define	err(fmt, args...)
 #define	dbg(fmt, args...)	fprintf(stdout,"[DBG] %s(%d) : " fmt, __func__, __LINE__, ##args)
 #define	err(fmt, args...)	fprintf(stderr,"[ERR] %s (%s - %d)] : " fmt, __FILE__, __func__, __LINE__, ##args)
-#define	info(fmt, args...)	fprintf(stdout,"[INFO] : " fmt, ##args)
+//#define	info(fmt, args...)	fprintf(stdout,"[INFO] : " fmt, ##args)
+#define	info(fmt, args...)
 
 //------------------------------------------------------------------------------
 typedef unsigned char   __u8;

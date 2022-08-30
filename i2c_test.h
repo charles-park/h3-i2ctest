@@ -27,6 +27,10 @@ typedef struct app_data__t {
 	__u8		i2c_test_addr[2];
 	/* FB dev node */
 	char		fb_dev[32];
+	/* ethernet name(mac) */
+	char		eth_name[2][32];
+	char		mac_test[16];
+	char		mac_range[2][32];
 
 	fb_info_t	*pfb;
 	ui_grp_t	*pui;
